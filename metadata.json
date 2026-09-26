@@ -1,0 +1,6 @@
+{
+  "name": "Lesewort",
+  "description": "Мобильное приложение для чтения книг на иностранном языке со встроенной системой учёта изученных слов, отслеживанием статистики и оценкой сложности книг.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
