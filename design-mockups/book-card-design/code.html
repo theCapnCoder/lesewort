@@ -1,0 +1,405 @@
+<!DOCTYPE html><html class="dark" lang="ru" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Моя библиотека - Visual Data Grid</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#090A0D',
+            surface: {
+              card: '#12141A',
+              cardMuted: '#171A22',
+              pill: '#1E222D',
+              border: 'rgba(255, 255, 255, 0.07)'
+            },
+            accent: {
+              blue: '#3B82F6',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['"SF Mono"', 'ui-monospace', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Micro-Styles -->
+<style data-purpose="base-layout">
+    /* Custom scrollbar and tactile touch styles */
+    body {
+      background-color: #090A0D;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    :root {
+      --color-tier-1: #10B981;
+      --color-tier-2: #84CC16;
+      --color-tier-3: #F59E0B;
+      --color-tier-4: #F97316;
+      --color-tier-5: #EF4444;
+    }
+  </style>
+<style data-purpose="ring-gauges">
+    /* Circular Progress Ring styling */
+    .gauge-circle {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
+<!-- END: Custom Micro-Styles -->
+</head>
+<body class="bg-obsidian text-slate-100 min-h-screen antialiased flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+<!-- BEGIN: Mobile App Container -->
+<div class="w-full max-w-md mx-auto flex flex-col min-h-screen relative pb-28">
+<!-- BEGIN: TopBar (Minimalist iOS Style) -->
+<header class="sticky top-0 z-30 bg-obsidian/90 backdrop-blur-xl px-5 pt-10 pb-3 border-b border-surface-border">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<div class="w-8 h-8 rounded-xl bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center text-accent-blue font-mono text-xs font-bold">
+        &lt;/&gt;
+      </div>
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-blue/15 text-accent-blue border border-accent-blue/30">UI Component</span>
+<span class="text-[10px] text-slate-500 font-mono">v2.4 • In-Progress</span>
+</div>
+<h1 class="text-base font-bold text-white tracking-tight mt-0.5">Шаблон карточки книги</h1>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-surface-pill border border-surface-border text-slate-300 font-medium">
+        &lt;BookCard /&gt;
+      </span>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: Quick Filter Strip -->
+<div class="px-5 py-2.5 flex items-center justify-between text-xs border-b border-surface-border/50 bg-obsidian/40 backdrop-blur-md">
+<div class="flex items-center space-x-1.5">
+<button class="px-2.5 py-1 rounded-lg bg-accent-blue text-white text-[11px] font-semibold shadow-sm">Default</button>
+<button class="px-2.5 py-1 rounded-lg bg-surface-pill text-slate-400 hover:text-white border border-surface-border text-[11px] font-medium">Interactive</button>
+<button class="px-2.5 py-1 rounded-lg bg-surface-pill text-slate-400 hover:text-white border border-surface-border text-[11px] font-medium">Compact</button>
+</div>
+<span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Live Spec
+  </span>
+</div>
+<!-- END: Quick Filter Strip -->
+<!-- BEGIN: Book Library Content -->
+<main class="flex-1 px-4 space-y-4 pt-3 pb-8" data-purpose="book-cards-list">
+<!-- Component Preview Section Label -->
+<div class="flex items-center justify-between px-1">
+<span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-blue"></span> Preview Canvas
+    </span>
+<span class="text-[11px] font-mono text-slate-500">Slot: Interactive Media</span>
+</div>
+<!-- THE FEATURED HERO BOOK CARD COMPONENT -->
+<article class="bg-surface-card rounded-2xl p-4 border border-surface-border shadow-2xl relative overflow-hidden transition-all active:border-slate-700/60" data-purpose="book-card"><!-- Top Row: Full-width Title, Author & Bookmark Action -->
+<div class="flex items-start justify-between gap-2 mb-3.5">
+<div class="min-w-0 flex-1">
+<h2 class="text-base font-bold text-white tracking-tight truncate leading-snug">Das kleine Känguru und seine Freunde</h2>
+<p class="text-xs font-medium text-slate-400 truncate mt-0.5">Paul Maar</p>
+</div>
+<button aria-label="Сохранить" class="text-slate-500 hover:text-slate-300 p-1 -mr-1 flex-shrink-0">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Middle Row: Cover & Complexity Widget Side by Side (Balanced Heights) -->
+<div class="flex items-stretch gap-3.5">
+<!-- Book Cover Graphic Mockup -->
+<div class="relative flex-shrink-0 w-24 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-gradient-to-br from-amber-800/40 via-orange-950/60 to-slate-900 flex flex-col justify-between p-2.5">
+<div class="flex justify-between items-start">
+<span class="text-[9px] font-black tracking-widest text-amber-300 uppercase">Paul Maar</span>
+
+</div>
+<div>
+<p class="text-[11px] font-bold text-white leading-tight line-clamp-2">Das kleine Känguru</p>
+<span class="text-[9px] text-amber-200/70 block mt-0.5 font-medium">Band 1</span>
+</div>
+
+</div>
+<!-- Complexity & Progress Summary Widget Box -->
+<div class="flex-1 min-w-0 flex flex-col justify-between space-y-2">
+<!-- Блок «Сложность»: 24px tabular-nums, бейдж [B1], утолщенные сегменты h-2 rounded-full с подсветкой -->
+
+<!-- Три кнопки частотности слов: полноценная строка, цифры 15px, индикаторы w-3 h-3, контрастные плашки -->
+<div class="p-3 rounded-xl bg-surface-cardMuted/70 border border-surface-border/60 flex flex-col justify-between space-y-2.5" data-purpose="metrics-unified-widget"><div class="grid grid-cols-2 gap-3">
+    <div class="space-y-1">
+      <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold block leading-none">Сложность</span>
+      <div class="text-[24px] font-mono font-black text-amber-400 leading-none tracking-tight pt-0.5">48.7%</div>
+    </div>
+    <div class="space-y-1 text-right flex flex-col items-end">
+      <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold block leading-none">Лексика</span>
+      <div class="text-[24px] font-mono font-black text-emerald-400 leading-none tracking-tight pt-0.5">15.9%</div>
+    </div>
+  </div>
+  <div class="grid grid-cols-5 gap-1.5 pt-1">
+    <span class="h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]"></span>
+    <span class="h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]"></span>
+    <span class="h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]"></span>
+    <span class="h-1.5 rounded-full bg-surface-pill"></span>
+    <span class="h-1.5 rounded-full bg-surface-pill"></span>
+  </div></div><div class="grid grid-cols-3 gap-1.5" data-purpose="frequency-badges">
+<div class="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl bg-blue-500/10 border border-blue-500/25 cursor-pointer hover:bg-blue-500/15 transition-all text-center">
+<div class="flex items-center space-x-1.5">
+<span class="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(59,130,246,0.6)] flex-shrink-0"></span>
+<span class="text-[15px] font-mono font-black text-blue-300 leading-none">1.3k</span>
+</div>
+<span class="text-[8px] font-mono uppercase tracking-wide text-blue-400/80 mt-1">новые</span>
+</div>
+<div class="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl bg-amber-500/10 border border-amber-500/25 cursor-pointer hover:bg-amber-500/15 transition-all text-center">
+<div class="flex items-center space-x-1.5">
+<span class="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.6)] flex-shrink-0"></span>
+<span class="text-[15px] font-mono font-black text-amber-300 leading-none">414</span>
+</div>
+<span class="text-[8px] font-mono uppercase tracking-wide text-amber-400/80 mt-1">Изучаю</span>
+</div>
+<div class="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 cursor-pointer hover:bg-emerald-500/15 transition-all text-center">
+<div class="flex items-center space-x-1.5">
+<span class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)] flex-shrink-0"></span>
+<span class="text-[15px] font-mono font-black text-emerald-300 leading-none">309</span>
+</div>
+<span class="text-[8px] font-mono uppercase tracking-wide text-emerald-400/80 mt-1">Знаю</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Слова книги: аккуратная отдельная подложка 13px medium + Статус чтения -->
+<div class="mt-3.5 space-y-2"><div class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface-cardMuted border border-surface-border/60 gap-2">
+  <div class="flex items-center space-x-2.5 text-[13px] font-medium text-slate-200 min-w-0">
+    <span class="flex items-center gap-1.5 flex-shrink-0" title="Уникальные слова">
+      <span class="text-xs leading-none">🔤</span>
+      <span class="font-bold text-white font-mono leading-none">2.1k</span>
+      <span class="text-slate-400 text-[11px] leading-none">уник.</span>
+    </span>
+    <span class="text-slate-600 flex-shrink-0 text-xs leading-none">•</span>
+    <span class="flex items-center gap-1.5 flex-shrink-0" title="Всего слов">
+      <span class="text-xs leading-none">📖</span>
+      <span class="font-bold text-white font-mono leading-none">13.3k</span>
+      <span class="text-slate-400 text-[11px] leading-none">всего</span>
+    </span>
+  </div>
+  <div class="text-[11px] font-mono text-slate-400 flex-shrink-0 whitespace-nowrap pl-1">
+    <span class="text-white font-semibold">11</span> / 80 стр.
+  </div>
+</div>
+<div class="space-y-1.5 pt-1">
+  <div class="flex justify-between items-center text-[11px] font-mono">
+    <span class="text-slate-400 text-[10px] tracking-wide">Прогресс чтения книги</span>
+    <span class="text-accent-blue font-bold">13%</span>
+  </div>
+  <div class="w-full bg-surface-pill h-2 rounded-full overflow-hidden">
+    <div class="bg-accent-blue h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 13%"></div>
+  </div>
+</div></div>
+<!-- Vocabulary Micro Pills Strip -->
+<!-- Action CTA Button -->
+</article>
+<!-- COMPONENT PROPS & SLOTS SPECIFICATION -->
+<!-- BEGIN: 5-Level Difficulty System Specification & Interactive Preview -->
+<section class="mt-4 space-y-2.5" data-purpose="difficulty-palette-tokens"><div class="flex items-center justify-between px-1"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background-color: var(--color-tier-3);"></span><span class="text-[11px] font-mono text-slate-300 uppercase tracking-wider font-semibold">Палитра шкал сложности</span></div><span class="text-[10px] font-mono text-accent-cyan">Design Tokens: Difficulty Spectrum</span></div><div class="bg-surface-cardMuted/70 border border-surface-border/60 rounded-xl p-3.5 space-y-3 text-xs shadow-lg"><div class="flex items-center justify-between pb-2 border-b border-surface-border/40"><span class="text-[10px] font-mono text-slate-400">Глобальные токены в <code>:root</code></span><span class="text-[9px] font-mono px-2 py-0.5 rounded bg-surface-pill border border-surface-border text-slate-300">5-Color Semantic Palette</span></div><div class="p-3 rounded-lg bg-surface-card border border-surface-border/50 space-y-2"><div class="flex items-center justify-between"><span class="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500"></span> Непрерывный спектр (0% → 100%)</span><span class="text-[9px] font-mono text-slate-400">Linear Interpolation</span></div><div class="relative pt-1"><div class="h-2.5 w-full rounded-full" style="background: linear-gradient(90deg, #10B981 0%, #84CC16 25%, #F59E0B 50%, #F97316 75%, #EF4444 100%);"></div><div class="absolute -top-0.5 flex flex-col items-center pointer-events-none" style="left: 15.9%; transform: translateX(-50%);"><div class="w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-obsidian shadow-[0_0_8px_rgba(16,185,129,0.9)]"></div><span class="text-[8px] font-mono font-bold text-emerald-300 mt-1 bg-surface-pill/90 px-1 rounded border border-emerald-500/30">15.9%</span></div></div><div class="flex justify-between items-center text-[9px] font-mono text-slate-500 pt-1"><span class="">0% (A1)</span><span class="">25% (A2)</span><span class="">50% (B1)</span><span class="">75% (B2)</span><span class="">100% (C1+)</span></div></div><div class="space-y-2"><div class="flex items-center justify-between p-2 rounded-lg bg-surface-card border border-surface-border/40"><div class="flex items-center space-x-2.5"><span class="w-3.5 h-3.5 rounded-md shadow-sm flex-shrink-0" style="background-color: var(--color-tier-1);"></span><div><div class="flex items-center gap-1.5"><span class="text-[11px] font-semibold text-slate-200">Emerald / Mint</span><span class="px-1.5 py-0.2 rounded font-mono text-[8px] font-bold uppercase" style="color: var(--color-tier-1); background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3);">A1–A2</span></div><span class="text-[9px] font-mono text-slate-500">Уровень 1 • 15–25%</span></div></div><div class="text-right"><span class="font-mono text-[10px] text-slate-300 block">#10B981</span><span class="font-mono text-[9px] text-slate-500">--color-tier-1</span></div></div><div class="flex items-center justify-between p-2 rounded-lg bg-surface-card border border-surface-border/40"><div class="flex items-center space-x-2.5"><span class="w-3.5 h-3.5 rounded-md shadow-sm flex-shrink-0" style="background-color: var(--color-tier-2);"></span><div><div class="flex items-center gap-1.5"><span class="text-[11px] font-semibold text-slate-200">Lime / Olive</span><span class="px-1.5 py-0.2 rounded font-mono text-[8px] font-bold uppercase" style="color: var(--color-tier-2); background-color: rgba(132, 204, 22, 0.12); border: 1px solid rgba(132, 204, 22, 0.3);">A2–B1</span></div><span class="text-[9px] font-mono text-slate-500">Уровень 2 • 25–40%</span></div></div><div class="text-right"><span class="font-mono text-[10px] text-slate-300 block">#84CC16</span><span class="font-mono text-[9px] text-slate-500">--color-tier-2</span></div></div><div class="flex items-center justify-between p-2 rounded-lg bg-surface-card border border-surface-border/40" style="border-color: rgba(245, 158, 11, 0.35);"><div class="flex items-center space-x-2.5"><span class="w-3.5 h-3.5 rounded-md shadow-sm flex-shrink-0 animate-pulse" style="background-color: var(--color-tier-3);"></span><div><div class="flex items-center gap-1.5"><span class="text-[11px] font-semibold text-amber-200">Amber / Gold (Текущий)</span><span class="px-1.5 py-0.2 rounded font-mono text-[8px] font-bold uppercase" style="color: var(--color-tier-3); background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35);">B1</span></div><span class="text-[9px] font-mono text-slate-500">Уровень 3 • 40–60%</span></div></div><div class="text-right"><span class="font-mono text-[10px] text-amber-300 block">#F59E0B</span><span class="font-mono text-[9px] text-slate-500">--color-tier-3</span></div></div><div class="flex items-center justify-between p-2 rounded-lg bg-surface-card border border-surface-border/40"><div class="flex items-center space-x-2.5"><span class="w-3.5 h-3.5 rounded-md shadow-sm flex-shrink-0" style="background-color: var(--color-tier-4);"></span><div><div class="flex items-center gap-1.5"><span class="text-[11px] font-semibold text-slate-200">Coral / Tangerine</span><span class="px-1.5 py-0.2 rounded font-mono text-[8px] font-bold uppercase" style="color: var(--color-tier-4); background-color: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35);">B2</span></div><span class="text-[9px] font-mono text-slate-500">Уровень 4 • 60–80%</span></div></div><div class="text-right"><span class="font-mono text-[10px] text-slate-300 block">#F97316</span><span class="font-mono text-[9px] text-slate-500">--color-tier-4</span></div></div><div class="flex items-center justify-between p-2 rounded-lg bg-surface-card border border-surface-border/40"><div class="flex items-center space-x-2.5"><span class="w-3.5 h-3.5 rounded-md shadow-sm flex-shrink-0" style="background-color: var(--color-tier-5);"></span><div><div class="flex items-center gap-1.5"><span class="text-[11px] font-semibold text-slate-200">Crimson / Ruby</span><span class="px-1.5 py-0.2 rounded font-mono text-[8px] font-bold uppercase" style="color: var(--color-tier-5); background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35);">C1+</span></div><span class="text-[9px] font-mono text-slate-500">Уровень 5 • 80–100%</span></div></div><div class="text-right"><span class="font-mono text-[10px] text-slate-300 block">#EF4444</span><span class="font-mono text-[9px] text-slate-500">--color-tier-5</span></div></div></div></div></section><section class="mt-4 space-y-2.5" data-purpose="difficulty-system-spec"><div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-amber-400"></span>
+<span class="text-[11px] font-mono text-slate-300 uppercase tracking-wider font-semibold">Шкала сложности</span>
+</div>
+<span class="text-[10px] font-mono text-slate-500">CEFR 5-Tier Spec</span>
+</div>
+<div class="bg-surface-cardMuted/70 border border-surface-border/60 rounded-xl p-3.5 space-y-2.5 text-xs shadow-lg">
+<!-- Level 1 Card -->
+<div class="cursor-pointer group p-2.5 rounded-lg bg-surface-card border border-surface-border/50 hover:border-emerald-500/40 transition-all">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="text-[11px] font-semibold text-slate-100 group-hover:text-emerald-300 transition-colors">Очень легкая</span>
+<span class="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-mono text-[9px] font-bold">A1–A2</span>
+</div>
+<span class="text-[10px] font-mono text-emerald-400 font-medium">20%</span>
+</div>
+<div class="grid grid-cols-5 gap-1.5 mt-2">
+<span class="h-1.5 rounded-sm bg-emerald-400"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+</div>
+</div>
+<!-- Level 2 Card -->
+<div class="cursor-pointer group p-2.5 rounded-lg bg-surface-card border border-surface-border/50 hover:border-[#84cc16]/50 transition-all">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-[#84cc16]"></span>
+<span class="text-[11px] font-semibold text-slate-100 group-hover:text-[#84cc16] transition-colors">Легкая</span>
+<span class="px-1.5 py-0.5 rounded bg-[#84cc16]/10 border border-[#84cc16]/30 text-[#84cc16] font-mono text-[9px] font-bold">A2–B1</span>
+</div>
+<span class="text-[10px] font-mono text-[#84cc16] font-medium">35%</span>
+</div>
+<div class="grid grid-cols-5 gap-1.5 mt-2">
+<span class="h-1.5 rounded-sm bg-[#84cc16]"></span>
+<span class="h-1.5 rounded-sm bg-[#84cc16]"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+</div>
+</div>
+<!-- Level 3 Card -->
+<div class="cursor-pointer group p-2.5 rounded-lg bg-surface-card border border-amber-500/40 shadow-sm transition-all">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+<span class="text-[11px] font-semibold text-amber-200 group-hover:text-amber-300 transition-colors">Средняя (Текущая)</span>
+<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] font-bold">B1</span>
+</div>
+<span class="text-[10px] font-mono text-amber-400 font-bold">48.7%</span>
+</div>
+<div class="grid grid-cols-5 gap-1.5 mt-2">
+<span class="h-1.5 rounded-sm bg-amber-400"></span>
+<span class="h-1.5 rounded-sm bg-amber-400"></span>
+<span class="h-1.5 rounded-sm bg-amber-400"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+</div>
+</div>
+<!-- Level 4 Card -->
+<div class="cursor-pointer group p-2.5 rounded-lg bg-surface-card border border-surface-border/50 hover:border-[#f97316]/50 transition-all">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-[#f97316]"></span>
+<span class="text-[11px] font-semibold text-slate-100 group-hover:text-[#f97316] transition-colors">Повышенная</span>
+<span class="px-1.5 py-0.5 rounded bg-[#f97316]/10 border border-[#f97316]/30 text-[#f97316] font-mono text-[9px] font-bold">B2</span>
+</div>
+<span class="text-[10px] font-mono text-[#f97316] font-medium">70%</span>
+</div>
+<div class="grid grid-cols-5 gap-1.5 mt-2">
+<span class="h-1.5 rounded-sm bg-[#f97316]"></span>
+<span class="h-1.5 rounded-sm bg-[#f97316]"></span>
+<span class="h-1.5 rounded-sm bg-[#f97316]"></span>
+<span class="h-1.5 rounded-sm bg-[#f97316]"></span>
+<span class="h-1.5 rounded-sm bg-surface-pill"></span>
+</div>
+</div>
+<!-- Level 5 Card -->
+<div class="cursor-pointer group p-2.5 rounded-lg bg-surface-card border border-surface-border/50 hover:border-[#ef4444]/50 transition-all">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-[#ef4444]"></span>
+<span class="text-[11px] font-semibold text-slate-100 group-hover:text-[#ef4444] transition-colors">Высокая / Эксперт</span>
+<span class="px-1.5 py-0.5 rounded bg-[#ef4444]/15 border border-[#ef4444]/35 text-[#ef4444] font-mono text-[9px] font-bold">C1+</span>
+</div>
+<span class="text-[10px] font-mono text-[#ef4444] font-medium">90%</span>
+</div>
+<div class="grid grid-cols-5 gap-1.5 mt-2">
+<span class="h-1.5 rounded-sm bg-[#ef4444]"></span>
+<span class="h-1.5 rounded-sm bg-[#ef4444]"></span>
+<span class="h-1.5 rounded-sm bg-[#ef4444]"></span>
+<span class="h-1.5 rounded-sm bg-[#ef4444]"></span>
+<span class="h-1.5 rounded-sm bg-[#ef4444]"></span>
+</div>
+</div>
+</div></section>
+<!-- END: 5-Level Difficulty System Specification --><div class="mt-5 space-y-2.5">
+<div class="flex items-center justify-between px-1">
+<span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Спецификация слотов шаблона</span>
+<span class="text-[10px] font-mono text-accent-cyan">Design Tokens</span>
+</div>
+<div class="bg-surface-cardMuted/70 border border-surface-border/60 rounded-xl p-3.5 space-y-2.5 text-xs"><!-- Slot 1: Header (Title + Author + Action) -->
+<div class="flex items-center justify-between border-b border-surface-border/40 pb-2">
+<div class="flex items-center space-x-2">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-blue"></span>
+<span class="font-mono text-slate-200 text-[11px]">slot:header</span>
+</div>
+<span class="font-mono text-slate-400 text-[10px]">Title + Author + Bookmark</span>
+</div>
+<!-- Slot 2: Cover & Difficulty Widget -->
+<div class="flex items-center justify-between border-b border-surface-border/40 pb-2">
+<div class="flex items-center space-x-2">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-cyan"></span>
+<span class="font-mono text-slate-200 text-[11px]">slot:cover_and_difficulty</span>
+</div>
+<span class="font-mono text-slate-400 text-[10px]">Cover + 5-Segment Dynamic CEFR Meter (A1-C1+)</span>
+</div>
+<!-- Slot 3: Progress & Lexical Breakdowns -->
+<div class="flex items-center justify-between border-b border-surface-border/40 pb-2">
+<div class="flex items-center space-x-2">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+<span class="font-mono text-slate-200 text-[11px]">slot:lexical_pills</span>
+</div>
+<span class="font-mono text-slate-400 text-[10px]">Blue (1.3k) • Amber (414) • Green (309)</span>
+</div>
+<!-- Slot 4: Action Controls -->
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="font-mono text-slate-200 text-[11px]">slot:actions</span>
+</div>
+<span class="font-mono text-slate-400 text-[10px]">Primary CTA (Продолжить чтение)</span>
+</div></div>
+</div>
+</main>
+<!-- END: Book Library Content -->
+<!-- BEGIN: Bottom Navigation Bar (iOS Minimal Dark) -->
+<nav aria-label="Нижняя навигация" class="fixed bottom-0 left-0 right-0 z-50 bg-obsidian/90 backdrop-blur-2xl border-t border-surface-border">
+<div class="max-w-md mx-auto px-6 py-2.5 flex justify-between items-center">
+<!-- Tab: Библиотека (Active) -->
+<a class="flex flex-col items-center group" href="#library">
+<div class="px-4 py-1 rounded-full bg-accent-blue/15 text-accent-blue transition-colors">
+<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+<path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"></path>
+</svg>
+</div>
+<span class="text-[10px] font-bold text-accent-blue mt-1">Библиотека</span>
+</a>
+<!-- Tab: Читалка -->
+<a class="flex flex-col items-center group text-slate-500 hover:text-slate-300 transition-colors" href="#reader">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] font-medium mt-1">Читалка</span>
+</a>
+<!-- Tab: Словарь -->
+<a class="flex flex-col items-center group text-slate-500 hover:text-slate-300 transition-colors" href="#vocab">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] font-medium mt-1">Словарь</span>
+</a>
+<!-- Tab: Настройки -->
+<a class="flex flex-col items-center group text-slate-500 hover:text-slate-300 transition-colors" href="#settings">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] font-medium mt-1">Настройки</span>
+</a>
+</div>
+</nav>
+<!-- END: Bottom Navigation Bar -->
+</div>
+<!-- END: Mobile App Container -->
+
+
+</body></html>
