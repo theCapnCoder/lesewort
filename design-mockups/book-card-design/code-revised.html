@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html class="dark" lang="ru" style="">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <title>Моя библиотека - Lesewort Book Card</title>
+    <style>
+        :root {
+            /* Colors from colors.xml */
+            --surface-card: #FF12141A;
+            --surface-border: rgba(255, 255, 255, 0.07);
+            --surface-border-active: rgba(51, 65, 85, 0.33);
+            --text-white: #FFFFFFFF;
+            --text-slate-400: #FF94A3B8;
+            --text-slate-500: #FF64748B;
+            --text-slate-300: #FFCBD5E1;
+            --border-white-overlay: rgba(255, 255, 255, 0.10);
+            --text-amber-300: #FFFD34D;
+            --text-amber-200-muted: #B2FDE68A;
+            --surface-card-muted-overlay: rgba(23, 26, 34, 0.70);
+            --surface-border-extra-muted: rgba(255, 255, 255, 0.04);
+            --shadow-indicator-blue: rgba(59, 130, 246, 0.60);
+            --shadow-indicator-amber: rgba(245, 158, 11, 0.60);
+            --shadow-indicator-emerald: rgba(16, 185, 129, 0.60);
+            --text-blue-300: #FF93C5FD;
+            --text-blue-400-muted: rgba(96, 165, 250, 0.80);
+            --text-amber-400-muted: rgba(251, 191, 36, 0.80);
+            --text-emerald-300: #FF6EE7B7;
+            --text-emerald-400-muted: rgba(52, 211, 153, 0.80);
+            --bg-blue-500-hover: rgba(59, 130, 246, 0.15);
+            --bg-amber-500-hover: rgba(255, 179, 0, 0.15);
+            --bg-emerald-500-hover: rgba(16, 185, 129, 0.15);
+            --bg-blue-500-background: rgba(59, 130, 246, 0.10);
+            --bg-amber-500-background: rgba(255, 179, 0, 0.10);
+            --bg-emerald-500-background: rgba(16, 185, 129, 0.10);
+            --border-blue-500: rgba(59, 130, 246, 0.25);
+            --border-amber-500: rgba(255, 179, 0, 0.25);
+            --border-emerald-500: rgba(16, 185, 129, 0.25);
+            --surface-pill: #FF1E222D;
+            --text-amber-400: #FFFFBF24;
+            --text-emerald-400: #FF34D399;
+            --accent-blue: #FF3B82F6;
+
+            /* Typography */
+            --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+
+            /* Spacing */
+            --spacing-2: 0.5rem;
+            --spacing-3: 0.75rem;
+            --spacing-4: 1rem;
+            --spacing-5: 1.25rem;
+            --spacing-6: 1.5rem;
+            --spacing-8: 2rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #090A0D;
+            color: var(--text-white);
+            font-family: var(--font-sans);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .book-card {
+            background-color: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Left border for grouped view */
+        .book-card.grouped {
+            border-left: 4px solid var(--text-emerald-300);
+            padding-left: calc(1.5rem - 2px); /* Compensate for left border */
+        }
+
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Top row: title, author, action */
+        .card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .book-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--text-white);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-author {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-slate-400);
+        }
+
+        .bookmark-action {
+            align-self: flex-start;
+            padding: 0.5rem;
+            color: var(--text-slate-500);
+            transition: color 0.2s;
+        }
+
+        .bookmark-action:hover {
+            color: var(--text-white);
+        }
+
+        /* Middle section: cover and stats */
+        .card-body {
+            display: flex;
+            gap: 1.25rem;
+            align-items: flex-start;
+        }
+
+        .book-cover-container {
+            position: relative;
+            width: 100px;
+            height: 150px;
+            flex-shrink: 0;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid var(--border-white-overlay);
+        }
+
+        .book-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: linear-gradient(to bottom, #334155, #1e293b);
+        }
+
+        /* Statistics badge below cover */
+        .stats-badge {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(23, 26, 34, 0.70);
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-circle {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .stat-circle.new {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+        .stat-circle.learning {
+            background-color: #FBBF24;
+            color: black;
+        }
+
+        .stat-circle.learned {
+            background-color: #10B981;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-circle.new .stat-label {
+            color: white;
+            opacity: 0.8;
+        }
+
+        .stat-circle.learning .stat-label {
+            color: black;
+            opacity: 0.8;
+        }
+
+        .stat-circle.learned .stat-label {
+            color: white;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        /* Book info section */
+        .book-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: var(--text-slate-400);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-slate-300);
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-white);
+        }
+
+        .info-value.accent {
+            color: var(--accent-blue);
+        }
+
+        .info-value.warning {
+            color: var(--text-amber-300);
+        }
+
+        /* Progress section */
+        .progress-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: var(--text-slate-400);
+        }
+
+        .progress-bar {
+            height: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-blue);
+            border-radius: 0.25rem;
+            transition: width 0.3s ease;
+        }
+
+        /* Vocabulary pills */
+        .vocabulary-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .vocab-pill {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .vocab-pill.new {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: var(--text-blue-300);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .vocab-pill.learning {
+            background-color: rgba(255, 191, 36, 0.2);
+            color: var(--text-amber-300);
+            border: 1px solid rgba(255, 191, 36, 0.3);
+        }
+
+        .vocab-pill.learned {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--text-emerald-300);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Action button */
+        .action-button {
+            margin-top: 1.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: var(--bg-blue-500-background);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 350px) {
+            .book-card {
+                padding: 1rem;
+            }
+
+            .book-cover-container {
+                width: 80px;
+                height: 120px;
+            }
+
+            .book-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="book-card">
+        <div class="card-content">
+            <!-- Header: Title, Author, Action -->
+            <div class="card-header">
+                <div>
+                    <h2 class="book-title">Das kleine Känguru und seine Freunde</h2>
+                    <p class="book-author">Paul Maar</p>
+                </div>
+                <button class="bookmark-action" aria-label="Сохранить">
+                    <!-- In real app, this would be an icon -->
+                    ★
+                </button>
+            </div>
+
+            <!-- Body: Cover and Info -->
+            <div class="card-body">
+                <!-- Book Cover -->
+                <div class="book-cover-container">
+                    <div class="book-cover"></div>
+                    <!-- Statistics badge below cover -->
+                    <div class="stats-badge">
+                        <div class="stat-circle new">
+                            <div class="stat-value">1.3k</div>
+                            <div class="stat-label">новые</div>
+                        </div>
+                        <div class="stat-circle learning">
+                            <div class="stat-value">414</div>
+                            <div class="stat-label">Изучаю</div>
+                        </div>
+                        <div class="stat-circle learned">
+                            <div class="stat-value">309</div>
+                            <div class="stat-label">Знаю</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Info -->
+                <div class="book-info">
+                    <div class="info-row">
+                        <span class="info-label">Сложность:</span>
+                        <span class="info-value">48.7%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Уникальных слов:</span>
+                        <span class="info-value">2.1k</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Всего слов:</span>
+                        <span class="info-value">13.3k</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Лексическая плотность:</span>
+                        <span class="info-value">15.9%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Неизвестные слова:</span>
+                        <span class="info-value accent">11.0%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Понимание:</span>
+                        <span class="info-value accent">88.1%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>Прогресс чтения</span>
+                    <span>65%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 65%"></div>
+                </div>
+                <div class="progress-label">
+                    <span>Страница 45 / 120</span>
+                    <span>Глава 3 / 12</span>
+                </div>
+            </div>
+
+            <!-- Vocabulary Pills -->
+            <div class="vocabulary-pills">
+                <div class="vocab-pill new">Новые</div>
+                <div class="vocab-pill learning">Изучаю</div>
+                <div class="vocab-pill learned">Знаю</div>
+            </div>
+
+            <!-- Action Button -->
+            <button class="action-button">Продолжить чтение</button>
+        </div>
+    </div>
+</body>
+</html>
