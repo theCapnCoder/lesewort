@@ -16,3 +16,12 @@
 local.properties
 .env
 debug.keystore
+
+# Claude IDE local settings
+.claude/
+
+# Skill cache and data
+.agents/
+
+# Design mockups screenshots
+design-mockups/**/*.png
