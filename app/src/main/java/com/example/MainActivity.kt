@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -20,11 +21,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.example.data.db.AppDatabase
@@ -97,17 +100,56 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         if (currentTab != ScreenTab.READER) {
-                            NavigationBar(
-                                modifier = Modifier.testTag("bottom_nav")
+                            Surface(
+                                color = Color(0xFF090A0D),
+                                border = BorderStroke(1.dp, Color(0x1AFFFFFF)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("bottom_nav")
                             ) {
-                                ScreenTab.values().forEach { tab ->
-                                    NavigationBarItem(
-                                        selected = currentTab == tab,
-                                        onClick = { currentTab = tab },
-                                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                                        label = { Text(tab.title) },
-                                        modifier = Modifier.testTag("nav_item_${tab.route}")
-                                    )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .navigationBarsPadding()
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceAround,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    ScreenTab.values().forEach { tab ->
+                                        val isSelected = currentTab == tab
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .clickable { currentTab = tab }
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                .testTag("nav_item_${tab.route}")
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .background(
+                                                        if (isSelected) Color(0x263B82F6) else Color.Transparent
+                                                    )
+                                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isSelected) tab.icon else tab.outlinedIcon,
+                                                    contentDescription = tab.title,
+                                                    tint = if (isSelected) Color(0xFF3B82F6) else Color(0xFF64748B),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = tab.title,
+                                                fontSize = 10.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) Color(0xFF3B82F6) else Color(0xFF64748B),
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

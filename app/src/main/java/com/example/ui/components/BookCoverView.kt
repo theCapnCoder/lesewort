@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.MenuBox
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material3.Icon
@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -92,7 +93,7 @@ fun BookCoverView(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         if (coverBitmap != null) {

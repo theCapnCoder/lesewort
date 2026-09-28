@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -101,43 +102,52 @@ fun LibraryScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    if (selectedBookIds.isNotEmpty()) {
-                        IconButton(onClick = { selectedBookIds = emptySet() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Отменить выбор")
-                        }
-                    }
-                },
-                title = {
-                    if (selectedBookIds.isNotEmpty()) {
-                        Text(
-                            "Выбрано: ${selectedBookIds.size}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xE6131924),
+                                Color(0x33131924)
+                            )
                         )
-                    } else {
-                        Column {
+                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (selectedBookIds.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            IconButton(
+                                onClick = { selectedBookIds = emptySet() },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Отменить выбор", tint = Color.White)
+                            }
                             Text(
-                                "Моя библиотека",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Всего книг: ${libraryItems.size}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                "Выбрано: ${selectedBookIds.size}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                         }
-                    }
-                },
-                actions = {
-                    if (selectedBookIds.isNotEmpty()) {
+
                         IconButton(
                             onClick = {
                                 showMultiDeleteDialog = true
                             },
-                            modifier = Modifier.testTag("delete_selected_button")
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("delete_selected_button")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -146,48 +156,112 @@ fun LibraryScreen(
                             )
                         }
                     } else {
-                        val currentLang by viewModel.currentLanguage.collectAsState()
-                        IconButton(
-                            onClick = {
-                                val targetLang = when (currentLang) {
-                                    "de" -> "en"
-                                    "en" -> "fr"
-                                    else -> "de"
-                                }
-                                viewModel.setCurrentLanguage(context, targetLang)
-                            },
-                            modifier = Modifier
-                                .size(40.dp)
-                                .testTag("lang_toggle_button")
+                        // Title + Count Badge
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Text(
+                                text = "Библиотека",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.3).sp,
+                                    color = Color.White
+                                )
+                            )
+
+                            // Blue count badge
                             Box(
-                                contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = CircleShape
-                                    )
+                                    .background(Color(0x333B82F6))
+                                    .border(1.dp, Color(0x4D3B82F6), CircleShape)
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                when (currentLang) {
-                                    "de" -> GermanFlagIcon()
-                                    "fr" -> FrenchFlagIcon()
-                                    else -> EnglishFlagIcon()
-                                }
+                                Text(
+                                    text = "${libraryItems.size}",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF60A5FA)
+                                    )
+                                )
                             }
                         }
 
-                        Box {
-                            IconButton(
-                                onClick = { sortingMenuExpanded = true },
-                                modifier = Modifier.testTag("sort_menu_button")
+                        // Right side: Language selector pill + View / Sort button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val currentLang by viewModel.currentLanguage.collectAsState()
+
+                            // Language selector
+                            Surface(
+                                onClick = {
+                                    val targetLang = when (currentLang) {
+                                        "de" -> "en"
+                                        "en" -> "fr"
+                                        else -> "de"
+                                    }
+                                    viewModel.setCurrentLanguage(context, targetLang)
+                                },
+                                shape = CircleShape,
+                                color = Color(0xCC1E293B),
+                                border = BorderStroke(1.dp, Color(0x99334155)),
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .testTag("lang_toggle_button")
                             ) {
-                                Icon(Icons.Default.List, contentDescription = "Сортировка")
+                                Row(
+                                    modifier = Modifier.padding(start = 8.dp, end = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    when (currentLang) {
+                                        "de" -> GermanCircularFlag()
+                                        "fr" -> FrenchCircularFlag()
+                                        else -> EnglishCircularFlag()
+                                    }
+
+                                    Text(
+                                        text = currentLang.uppercase(),
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    )
+                                }
                             }
-                            if (sortingMenuExpanded) {
+
+                            // Sort / Catalog view button
+                            Box {
+                                Surface(
+                                    onClick = { sortingMenuExpanded = true },
+                                    shape = CircleShape,
+                                    color = Color(0xCC1E293B),
+                                    border = BorderStroke(1.dp, Color(0x99334155)),
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .testTag("sort_menu_button")
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                                            contentDescription = "Сменить вид каталога",
+                                            tint = Color(0xFFCBD5E1),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+
+                                if (sortingMenuExpanded) {
                                 AlertDialog(
                                     onDismissRequest = { sortingMenuExpanded = false },
                                     title = {
@@ -343,8 +417,14 @@ fun LibraryScreen(
                         }
                     }
                 }
+            }
+
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = Color(0x801E293B)
             )
-        },
+        }
+    },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { fileImportLauncher.launch("*/*") },
@@ -965,6 +1045,50 @@ fun FrenchFlagIcon(modifier: Modifier = Modifier) {
             Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFFFFFFF)))
             Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFED2939)))
         }
+    }
+}
+
+@Composable
+fun GermanCircularFlag(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(20.dp)
+            .clip(CircleShape)
+            .border(0.5.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().background(Color(0xFF000000)))
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().background(Color(0xFFDD0000)))
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().background(Color(0xFFFFCC00)))
+        }
+    }
+}
+
+@Composable
+fun FrenchCircularFlag(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(20.dp)
+            .clip(CircleShape)
+            .border(0.5.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFF002395)))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFFFFFFF)))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFED2939)))
+        }
+    }
+}
+
+@Composable
+fun EnglishCircularFlag(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(20.dp)
+            .clip(CircleShape)
+            .border(0.5.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
+    ) {
+        EnglishFlagIcon(modifier = Modifier.fillMaxSize())
     }
 }
 
