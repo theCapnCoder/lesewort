@@ -54,4 +54,39 @@ object ThemeSettings {
             else -> Color(0xFF2E7D32) // Default green
         }
     }
+
+    private fun lerpColor(start: Color, end: Color, fraction: Float): Color {
+        val f = fraction.coerceIn(0f, 1f)
+        return Color(
+            red = start.red + (end.red - start.red) * f,
+            green = start.green + (end.green - start.green) * f,
+            blue = start.blue + (end.blue - start.blue) * f,
+            alpha = start.alpha + (end.alpha - start.alpha) * f
+        )
+    }
+
+    /**
+     * Blue gradient highlight for unknown words based on occurrence frequency in the book:
+     * - Count <= 1: null (stays default text color)
+     * - Count == 2: light sky blue
+     * - Count >= 10: saturated deep blue
+     * - Count in 2..10: smooth linear interpolation
+     */
+    fun getUnknownWordFrequencyColor(count: Int, isDarkTheme: Boolean): Color? {
+        if (count <= 1) return null
+        val fraction = ((count - 2).toFloat() / (10 - 2)).coerceIn(0f, 1f)
+        return if (isDarkTheme) {
+            lerpColor(
+                Color(0xFF90CAF9), // light sky blue at count = 2
+                Color(0xFF1E88E5), // deep vibrant blue at count >= 10
+                fraction
+            )
+        } else {
+            lerpColor(
+                Color(0xFF42A5F5), // light sky blue at count = 2
+                Color(0xFF0D47A1), // deep navy blue at count >= 10
+                fraction
+            )
+        }
+    }
 }

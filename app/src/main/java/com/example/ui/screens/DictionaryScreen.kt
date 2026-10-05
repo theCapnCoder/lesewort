@@ -196,7 +196,7 @@ fun DictionaryScreen(
                 coroutineScope.launch {
                     try {
                         val databaseWords = viewModel.getAllKnownWordsList()
-                        val languagesToExport = mutableSetOf("de", "en")
+                        val languagesToExport = mutableSetOf("de", "en", "fr", "ja")
                         languagesToExport.addAll(databaseWords.map { it.language }.filter { it.isNotEmpty() })
                         
                         val dirFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -125,9 +126,29 @@ fun ReaderScreen(
     }
 
     var showChaptersList by remember { mutableStateOf(false) }
+    var showUnknownWordsSection by remember { mutableStateOf(false) }
+    val bookUnknownWords by viewModel.activeBookUnknownWords.collectAsState()
+    val highlightUnknownByFrequency by viewModel.highlightUnknownByFrequency.collectAsState()
+    val comprehensionDecimalPlaces by viewModel.comprehensionDecimalPlaces.collectAsState()
+
+    val formatComprehensionPercentage: (Double?) -> String = remember(comprehensionDecimalPlaces) {
+        { value ->
+            if (value != null && value > 0.0) {
+                "%.${comprehensionDecimalPlaces}f%%".format(value)
+            } else {
+                "--%"
+            }
+        }
+    }
+
+    val unknownWordFrequencyMap = remember(bookUnknownWords) {
+        bookUnknownWords.associate { it.cleanWord to it.count }
+    }
 
     BackHandler(enabled = true) {
-        if (showChaptersList) {
+        if (showUnknownWordsSection) {
+            showUnknownWordsSection = false
+        } else if (showChaptersList) {
             showChaptersList = false
         } else {
             onNavigateToTab(ScreenTab.LIBRARY)
@@ -205,7 +226,8 @@ fun ReaderScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
+            if (!showUnknownWordsSection) {
+                TopAppBar(
                 title = {
                     if (currentBook != null) {
                         Column {
@@ -292,7 +314,7 @@ fun ReaderScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                     )
                                     Text(
-                                        text = if (compPercentVal != null && compPercentVal > 0.0) "%.1f%%".format(compPercentVal) else "--%",
+                                        text = formatComprehensionPercentage(compPercentVal),
                                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary,
                                         maxLines = 1
@@ -413,11 +435,12 @@ fun ReaderScreen(
                 }
             )
         }
+    }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(if (showUnknownWordsSection) PaddingValues(0.dp) else innerPadding)
         ) {
             if (currentBook == null || currentChapters.isEmpty() || activeChapter == null) {
                 // Empty State
@@ -456,9 +479,20 @@ fun ReaderScreen(
                         Text("Перейти в Библиотеку")
                     }
                 }
+            } else if (showUnknownWordsSection) {
+                // Unknown words list section without translations
+                BookUnknownWordsScreen(
+                    book = currentBook!!,
+                    unknownWords = bookUnknownWords,
+                    viewModel = viewModel,
+                    onBack = { showUnknownWordsSection = false }
+                )
             } else if (showChaptersList) {
                 // Table of Contents list
                 val book = currentBook!!
+                val bookNewWordsDisplay = activeBookStatsData?.newCount?.toString()
+                    ?: book.newWordsCount.takeIf { it > 0 }?.toString()
+                    ?: "--"
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -532,7 +566,7 @@ fun ReaderScreen(
 
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Понятно по объему: ${if (drawerCompPercent != null && drawerCompPercent > 0.0) "%.1f%%".format(drawerCompPercent) else "--%"}",
+                                        text = "Понятно по объему: ${formatComprehensionPercentage(drawerCompPercent)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.secondary
@@ -610,7 +644,7 @@ fun ReaderScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = if (cardCompPercent != null && cardCompPercent > 0.0) "%.1f%%".format(cardCompPercent) else "--%",
+                                        text = formatComprehensionPercentage(cardCompPercent),
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -621,9 +655,11 @@ fun ReaderScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // New words badge
+                                    // New words badge (clickable)
                                     Surface(
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { showUnknownWordsSection = true },
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFF2196F3).copy(alpha = 0.12f),
                                         border = BorderStroke(1.dp, Color(0xFF2196F3).copy(alpha = 0.3f))
@@ -695,6 +731,101 @@ fun ReaderScreen(
                                             )
                                         }
                                     }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Button(
+                                    onClick = { showUnknownWordsSection = true },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("btn_show_unknown_words_vocab"),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF1976D2),
+                                        contentColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MenuBook,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Неизвестные слова ($cardNewDisplay)",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Dedicated button card to navigate to Unknown Words section
+                    item {
+                        Card(
+                            onClick = { showUnknownWordsSection = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("btn_unknown_words_section_card"),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFF2196F3).copy(alpha = 0.35f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = Color(0xFF2196F3).copy(alpha = 0.15f),
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.MenuBook,
+                                                contentDescription = null,
+                                                tint = Color(0xFF1976D2),
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                        }
+                                    }
+                                    Column {
+                                        Text(
+                                            text = "Неизвестные слова без перевода",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Частотный список новых слов книги",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFF2196F3).copy(alpha = 0.15f),
+                                    border = BorderStroke(1.dp, Color(0xFF2196F3).copy(alpha = 0.3f))
+                                ) {
+                                    Text(
+                                        text = bookNewWordsDisplay,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1976D2)
+                                    )
                                 }
                             }
                         }
@@ -1032,12 +1163,11 @@ fun ReaderScreen(
                                 val chapterBatchState by viewModel.chapterBatchStudyState.collectAsState()
                                 
                                 val chapterUnknownWordsCount = remember(paragraphs, knownWordsSet, learningWordsSet, studyWordsSet) {
-                                    val wordRegex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
+                                    val isJa = (currentBook?.language == "ja") || paragraphs.any { LinguisticEngine.isJapanese(it) }
                                     val set = mutableSetOf<String>()
                                     paragraphs.forEach { para ->
-                                        wordRegex.findAll(para).forEach { match ->
-                                            val clean = LinguisticEngine.tokenizeWord(match.value)
-                                            if (clean.length > 1 &&
+                                        LinguisticEngine.extractWordsFromText(para).forEach { clean ->
+                                            if ((isJa || clean.length > 1) &&
                                                 !knownWordsSet.contains(clean) &&
                                                 !learningWordsSet.contains(clean) &&
                                                 !studyWordsSet.contains(clean)
@@ -1180,32 +1310,42 @@ fun ReaderScreen(
                             val fullTranslationState = paragraphTranslationsState[translationKey]
                             val inlineTranslationState = inlineParagraphTranslationsState[translationKey]
                             val primaryColor = MaterialTheme.colorScheme.primary
+                            val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
                             val paragraphAnnotatedString = remember(
                                 paragraphText, knownWordsSet, learningWordsSet, studyWordsSet,
                                 onSurfaceColor, learningColorCode, learnedColorCode,
-                                paragraphMode, inlineTranslationState, primaryColor
+                                paragraphMode, inlineTranslationState, primaryColor,
+                                highlightUnknownByFrequency, unknownWordFrequencyMap, isDarkTheme
                             ) {
                                 buildAnnotatedString {
-                                    val regex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
+                                    val isJapaneseBook = (currentBook?.language == "ja") || LinguisticEngine.isJapanese(paragraphText)
+                                    val spans = LinguisticEngine.extractWordSpans(paragraphText, isJapaneseLanguage = isJapaneseBook)
                                     var lastIndex = 0
 
                                     val inlineMap = if ((paragraphMode == ParagraphMode.UNKNOWN_WORDS_INLINE || paragraphMode == ParagraphMode.ADD_TO_MATCH_GAME) && inlineTranslationState is com.example.ui.InlineParagraphTranslationUiState.Success) {
                                         inlineTranslationState.wordTranslations
                                     } else null
 
-                                    regex.findAll(paragraphText).forEach { match ->
+                                    spans.forEach { span ->
                                         // Append leading punctuation/spacing
-                                        if (match.range.first > lastIndex) {
-                                            append(paragraphText.substring(lastIndex, match.range.first))
+                                        if (span.startIndex > lastIndex) {
+                                            append(paragraphText.substring(lastIndex, span.startIndex))
                                         }
                                         
-                                        val word = match.value
-                                        val clean = LinguisticEngine.tokenizeWord(word)
+                                        val word = span.word
+                                        val clean = span.cleanWord
                                         val isLearned = knownWordsSet.contains(clean)
                                         val isLearning = learningWordsSet.contains(clean)
                                         val isStudying = studyWordsSet.contains(clean)
                                         val isUnknown = !isLearned && !isLearning && !isStudying
+
+                                        val unknownWordColor = if (isUnknown && highlightUnknownByFrequency) {
+                                            val count = unknownWordFrequencyMap[clean] ?: 1
+                                            ThemeSettings.getUnknownWordFrequencyColor(count, isDarkTheme) ?: onSurfaceColor
+                                        } else {
+                                            onSurfaceColor
+                                        }
 
                                         pushStringAnnotation(tag = "word", annotation = clean)
                                         
@@ -1215,7 +1355,7 @@ fun ReaderScreen(
                                                     isLearned -> ThemeSettings.getLearnedHighlightColor(learnedColorCode)
                                                     isLearning -> ThemeSettings.getLearningHighlightColor(learningColorCode)
                                                     isStudying -> Color(0xFFBA68C8) // Gentle soft purple for Match Game
-                                                    else -> onSurfaceColor
+                                                    else -> unknownWordColor
                                                 },
                                                 fontWeight = if (isLearned) FontWeight.Normal else FontWeight.Bold
                                             )
@@ -1240,7 +1380,7 @@ fun ReaderScreen(
                                             }
                                         }
 
-                                        lastIndex = match.range.last + 1
+                                        lastIndex = span.endIndex
                                     }
                                     if (lastIndex < paragraphText.length) {
                                         append(paragraphText.substring(lastIndex))
@@ -1379,11 +1519,10 @@ fun ReaderScreen(
                                                 if (inlineTranslationState is com.example.ui.InlineParagraphTranslationUiState.Success) {
                                                     viewModel.toggleInlineParagraphTranslation(translationKey)
                                                 } else {
-                                                    val wordRegex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
-                                                    val unknownWords = wordRegex.findAll(paragraphText)
-                                                        .map { LinguisticEngine.tokenizeWord(it.value) }
+                                                    val isJa = (currentBook?.language == "ja") || LinguisticEngine.isJapanese(paragraphText)
+                                                    val unknownWords = LinguisticEngine.extractWordsFromText(paragraphText)
                                                         .filter { clean ->
-                                                            clean.length > 1 &&
+                                                            (isJa || clean.length > 1) &&
                                                             !knownWordsSet.contains(clean) &&
                                                             !learningWordsSet.contains(clean) &&
                                                             !studyWordsSet.contains(clean)
@@ -1423,11 +1562,10 @@ fun ReaderScreen(
                                     } else {
                                         IconButton(
                                             onClick = {
-                                                val wordRegex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
-                                                val unknownWords = wordRegex.findAll(paragraphText)
-                                                    .map { LinguisticEngine.tokenizeWord(it.value) }
+                                                val isJa = (currentBook?.language == "ja") || LinguisticEngine.isJapanese(paragraphText)
+                                                val unknownWords = LinguisticEngine.extractWordsFromText(paragraphText)
                                                     .filter { clean ->
-                                                        clean.length > 1 &&
+                                                        (isJa || clean.length > 1) &&
                                                         !knownWordsSet.contains(clean) &&
                                                         !learningWordsSet.contains(clean) &&
                                                         !studyWordsSet.contains(clean)
@@ -2016,7 +2154,7 @@ private fun findSentenceAtOffset(text: String, offset: Int): String {
     
     // Find previous boundary
     var start = offset
-    val sentenceEndChars = setOf('.', '!', '?', '\n')
+    val sentenceEndChars = setOf('.', '!', '?', '\n', '。', '！', '？')
     while (start > 0) {
         if (sentenceEndChars.contains(text[start - 1])) {
             break
@@ -2041,10 +2179,10 @@ private fun findSentenceAtOffset(text: String, offset: Int): String {
 
 private fun findWordAtOffset(text: String, offset: Int): String {
     if (text.isEmpty() || offset < 0 || offset >= text.length) return ""
-    val regex = Regex("""\p{L}+(?:[-'’`]\p{L}+)*""")
-    for (match in regex.findAll(text)) {
-        if (offset in match.range) {
-            return match.value
+    val spans = LinguisticEngine.extractWordSpans(text)
+    for (span in spans) {
+        if (offset in span.startIndex until span.endIndex) {
+            return span.word
         }
     }
     return ""

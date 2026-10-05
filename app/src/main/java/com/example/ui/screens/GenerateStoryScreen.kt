@@ -46,7 +46,8 @@ import kotlin.math.roundToInt
 val STORY_GENERATION_LANGUAGES = listOf(
     AppLanguage("de", "Немецкий", "Deutsch", "🇩🇪"),
     AppLanguage("en", "Английский", "English", "🇬🇧"),
-    AppLanguage("fr", "Французский", "Français", "🇫🇷")
+    AppLanguage("fr", "Французский", "Français", "🇫🇷"),
+    AppLanguage("ja", "Японский", "日本語", "🇯🇵")
 )
 
 enum class CefrLevel(
@@ -170,6 +171,7 @@ fun buildDefaultPrompt(
         "de" -> "German"
         "en" -> "English"
         "fr" -> "French"
+        "ja" -> "Japanese"
         "es" -> "Spanish"
         "it" -> "Italian"
         "ru" -> "Russian"
@@ -180,6 +182,7 @@ fun buildDefaultPrompt(
         "de" -> "Kapitel"
         "en" -> "Chapter"
         "fr" -> "Chapitre"
+        "ja" -> "第"
         "es" -> "Capítulo"
         "it" -> "Capitolo"
         "ru" -> "Глава"
@@ -286,6 +289,7 @@ fun buildContinuationPrompt(
         "de" -> "German"
         "en" -> "English"
         "fr" -> "French"
+        "ja" -> "Japanese"
         "es" -> "Spanish"
         "it" -> "Italian"
         "ru" -> "Russian"
@@ -296,6 +300,7 @@ fun buildContinuationPrompt(
         "de" -> "Kapitel"
         "en" -> "Chapter"
         "fr" -> "Chapitre"
+        "ja" -> "第"
         "es" -> "Capítulo"
         "it" -> "Capitolo"
         "ru" -> "Глава"

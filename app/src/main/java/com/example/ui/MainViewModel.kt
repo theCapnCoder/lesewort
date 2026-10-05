@@ -171,6 +171,7 @@ data class CustomPrompt(
     val germanPromptTemplate: String,
     val englishPromptTemplate: String,
     val frenchPromptTemplate: String = DEFAULT_FRENCH_PROMPT,
+    val japanesePromptTemplate: String = DEFAULT_JAPANESE_PROMPT,
     val isActive: Boolean
 )
 
@@ -220,6 +221,22 @@ val DEFAULT_FRENCH_PROMPT = """
 
 ===ОБЪЯСНЕНИЕ===
 [Краткое грамматическое или лексическое объяснение слова "{word}" в контексте предложения: 2-3 предложения на русском языке]
+""".trimIndent()
+
+val DEFAULT_JAPANESE_PROMPT = """
+Дай полную информацию о японском слове "{word}" из предложения: "{sentence}".
+Учти чтение (кандзи, хирагана / фуригана / ромадзи), словарную форму, часть речи (существительное, глагол с типом спряжения, и-прилагательное, на-прилагательное, частица или счетный суффикс).
+
+Отвечай на русском языке строго в следующем формате по разделам:
+
+===ПЕРЕВОД СЛОВА===
+[СТРОГО только сам перевод японского слова "{word}" на русский язык, одно слово или несколько вариантов через запятую. Категорически запрещено добавлять любые вводные слова или фразы. Пиши ТОЛЬКО чистый перевод и ничего кроме него!]
+
+===ПЕРЕВОД ПРЕДЛОЖЕНИЯ===
+[Точный и естественный перевод японского предложения "{sentence}" на русский язык]
+
+===ОБЪЯСНЕНИЕ===
+[Чтение слова (хирагана / кандзи), словарная форма, часть речи и грамматическая роль в данном предложении. Кратко и понятно: 2-3 предложения на русском языке]
 """.trimIndent()
 
 val ETYMOLOGY_GERMAN_PROMPT = """
@@ -425,6 +442,7 @@ val DEFAULT_PROMPTS_LIST = listOf(
         germanPromptTemplate = DEFAULT_GERMAN_PROMPT,
         englishPromptTemplate = DEFAULT_ENGLISH_PROMPT,
         frenchPromptTemplate = DEFAULT_FRENCH_PROMPT,
+        japanesePromptTemplate = DEFAULT_JAPANESE_PROMPT,
         isActive = true
     ),
     CustomPrompt(
@@ -433,6 +451,7 @@ val DEFAULT_PROMPTS_LIST = listOf(
         germanPromptTemplate = CLASSIC_GERMAN_PROMPT,
         englishPromptTemplate = CLASSIC_ENGLISH_PROMPT,
         frenchPromptTemplate = CLASSIC_FRENCH_PROMPT,
+        japanesePromptTemplate = DEFAULT_JAPANESE_PROMPT,
         isActive = false
     ),
     CustomPrompt(
@@ -441,6 +460,7 @@ val DEFAULT_PROMPTS_LIST = listOf(
         germanPromptTemplate = ETYMOLOGY_GERMAN_PROMPT,
         englishPromptTemplate = ETYMOLOGY_ENGLISH_PROMPT,
         frenchPromptTemplate = ETYMOLOGY_FRENCH_PROMPT,
+        japanesePromptTemplate = DEFAULT_JAPANESE_PROMPT,
         isActive = false
     ),
     CustomPrompt(
@@ -449,6 +469,7 @@ val DEFAULT_PROMPTS_LIST = listOf(
         germanPromptTemplate = MNEMONICS_GERMAN_PROMPT,
         englishPromptTemplate = MNEMONICS_ENGLISH_PROMPT,
         frenchPromptTemplate = MNEMONICS_FRENCH_PROMPT,
+        japanesePromptTemplate = DEFAULT_JAPANESE_PROMPT,
         isActive = false
     ),
     CustomPrompt(
@@ -457,6 +478,7 @@ val DEFAULT_PROMPTS_LIST = listOf(
         germanPromptTemplate = NUANCES_GERMAN_PROMPT,
         englishPromptTemplate = NUANCES_ENGLISH_PROMPT,
         frenchPromptTemplate = NUANCES_FRENCH_PROMPT,
+        japanesePromptTemplate = DEFAULT_JAPANESE_PROMPT,
         isActive = false
     )
 )
@@ -486,6 +508,7 @@ class MainViewModel(
         val locale = when (languageCode.lowercase()) {
             "de" -> java.util.Locale.GERMAN
             "fr" -> java.util.Locale.FRENCH
+            "ja" -> java.util.Locale.JAPANESE
             else -> java.util.Locale.ENGLISH
         }
         try {
@@ -554,6 +577,12 @@ class MainViewModel(
 
     private val _customPrompts = MutableStateFlow<List<CustomPrompt>>(emptyList())
     val customPrompts: StateFlow<List<CustomPrompt>> = _customPrompts.asStateFlow()
+
+    private val _highlightUnknownByFrequency = MutableStateFlow(false)
+    val highlightUnknownByFrequency: StateFlow<Boolean> = _highlightUnknownByFrequency.asStateFlow()
+
+    private val _comprehensionDecimalPlaces = MutableStateFlow(1)
+    val comprehensionDecimalPlaces: StateFlow<Int> = _comprehensionDecimalPlaces.asStateFlow()
 
     // Interactive Translation StateFlows
     private val _translationState = MutableStateFlow<TranslationUiState>(TranslationUiState.Idle)
@@ -1078,6 +1107,47 @@ class MainViewModel(
         .map { it?.stats }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    // Dedicated flow of all unknown words in the active book with occurrence counts
+    val activeBookUnknownWords: StateFlow<List<BookUnknownWord>> = combine(
+        _currentBookId,
+        currentChapters,
+        _bookCache,
+        repository.allKnownWords,
+        repository.allBooks
+    ) { currentId, chapters, cache, allKnown, allBooks ->
+        if (currentId == null || chapters.isEmpty()) return@combine emptyList()
+        val book = allBooks.firstOrNull { it.id == currentId } ?: return@combine emptyList()
+        val bookLang = book.language
+        val knownSet = allKnown.filter { it.language == bookLang && it.status == 2 }
+            .map { it.word.lowercase() }.toSet()
+        val learningSet = allKnown.filter { it.language == bookLang && it.status == 1 }
+            .map { it.word.lowercase() }.toSet()
+
+        val wordCounts = HashMap<String, Int>()
+        val displayForms = HashMap<String, MutableMap<String, Int>>()
+
+        val isJa = bookLang == "ja" || (chapters.firstOrNull()?.content?.let { LinguisticEngine.isJapanese(it) } == true)
+
+        for (chapter in chapters) {
+            val spans = LinguisticEngine.extractWordSpans(chapter.content, isJa)
+            for (span in spans) {
+                val clean = span.cleanWord.lowercase()
+                if (clean.isNotEmpty() && !knownSet.contains(clean) && !learningSet.contains(clean)) {
+                    wordCounts[clean] = (wordCounts[clean] ?: 0) + 1
+                    val formMap = displayForms.getOrPut(clean) { mutableMapOf() }
+                    formMap[span.word] = (formMap[span.word] ?: 0) + 1
+                }
+            }
+        }
+
+        wordCounts.map { (clean, count) ->
+            val bestDisplay = displayForms[clean]?.maxByOrNull { it.value }?.key ?: clean
+            BookUnknownWord(word = bestDisplay, cleanWord = clean, count = count)
+        }.sortedByDescending { it.count }
+    }
+    .flowOn(defaultDispatcher)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun changeSort(type: SortType) {
         _sortBy.value = type
     }
@@ -1228,6 +1298,8 @@ class MainViewModel(
         _studyWordPortionSize.value = prefs.getInt("study_word_portion_size", 10)
         _targetCorrectCount.value = prefs.getInt("target_correct_count", 8)
         _gameRepetitionsLimit.value = prefs.getInt("game_repetitions_limit", 20)
+        _highlightUnknownByFrequency.value = prefs.getBoolean("highlight_unknown_by_frequency", false)
+        _comprehensionDecimalPlaces.value = prefs.getInt("comprehension_decimal_places", 1).coerceIn(0, 4)
 
         val allowedModels = listOf(
             "openai/gpt-oss-20b",
@@ -1274,6 +1346,25 @@ class MainViewModel(
         prefs.edit().putInt("game_repetitions_limit", limit).apply()
     }
 
+    fun setHighlightUnknownByFrequency(context: android.content.Context, enabled: Boolean) {
+        _highlightUnknownByFrequency.value = enabled
+        val prefs = context.getSharedPreferences("lesewort_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("highlight_unknown_by_frequency", enabled).apply()
+    }
+
+    fun setComprehensionDecimalPlaces(context: android.content.Context, places: Int) {
+        val bounded = places.coerceIn(0, 4)
+        _comprehensionDecimalPlaces.value = bounded
+        val prefs = context.getSharedPreferences("lesewort_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putInt("comprehension_decimal_places", bounded).apply()
+    }
+
+    fun formatComprehension(percent: Double?): String {
+        if (percent == null || percent <= 0.0) return "--%"
+        val places = _comprehensionDecimalPlaces.value.coerceIn(0, 4)
+        return "%.${places}f%%".format(percent)
+    }
+
     fun loadCustomPrompts(context: android.content.Context) {
         val prefs = context.getSharedPreferences("lesewort_prefs", android.content.Context.MODE_PRIVATE)
         val jsonString = prefs.getString("custom_prompts_json", null)
@@ -1293,6 +1384,7 @@ class MainViewModel(
                             germanPromptTemplate = obj.getString("germanPromptTemplate"),
                             englishPromptTemplate = obj.getString("englishPromptTemplate"),
                             frenchPromptTemplate = obj.optString("frenchPromptTemplate", DEFAULT_FRENCH_PROMPT),
+                            japanesePromptTemplate = obj.optString("japanesePromptTemplate", DEFAULT_JAPANESE_PROMPT),
                             isActive = obj.getBoolean("isActive")
                         )
                     )
@@ -1349,6 +1441,7 @@ class MainViewModel(
                 put("germanPromptTemplate", item.germanPromptTemplate)
                 put("englishPromptTemplate", item.englishPromptTemplate)
                 put("frenchPromptTemplate", item.frenchPromptTemplate)
+                put("japanesePromptTemplate", item.japanesePromptTemplate)
                 put("isActive", item.isActive)
             }
             array.put(obj)
@@ -1356,18 +1449,18 @@ class MainViewModel(
         prefs.edit().putString("custom_prompts_json", array.toString()).apply()
     }
 
-    fun addCustomPrompt(context: android.content.Context, name: String, germanTemplate: String, englishTemplate: String, frenchTemplate: String = DEFAULT_FRENCH_PROMPT) {
+    fun addCustomPrompt(context: android.content.Context, name: String, germanTemplate: String, englishTemplate: String, frenchTemplate: String = DEFAULT_FRENCH_PROMPT, japaneseTemplate: String = DEFAULT_JAPANESE_PROMPT) {
         val id = java.util.UUID.randomUUID().toString()
-        val newPrompt = CustomPrompt(id, name, germanTemplate, englishTemplate, frenchTemplate, false)
+        val newPrompt = CustomPrompt(id, name, germanTemplate, englishTemplate, frenchTemplate, japaneseTemplate, false)
         val updated = _customPrompts.value + newPrompt
         _customPrompts.value = updated
         saveCustomPromptsToPrefs(context, updated)
     }
 
-    fun updateCustomPrompt(context: android.content.Context, id: String, name: String, germanTemplate: String, englishTemplate: String, frenchTemplate: String = DEFAULT_FRENCH_PROMPT) {
+    fun updateCustomPrompt(context: android.content.Context, id: String, name: String, germanTemplate: String, englishTemplate: String, frenchTemplate: String = DEFAULT_FRENCH_PROMPT, japaneseTemplate: String = DEFAULT_JAPANESE_PROMPT) {
         val updated = _customPrompts.value.map {
             if (it.id == id) {
-                it.copy(name = name, germanPromptTemplate = germanTemplate, englishPromptTemplate = englishTemplate, frenchPromptTemplate = frenchTemplate)
+                it.copy(name = name, germanPromptTemplate = germanTemplate, englishPromptTemplate = englishTemplate, frenchPromptTemplate = frenchTemplate, japanesePromptTemplate = japaneseTemplate)
             } else {
                 it
             }
@@ -1648,6 +1741,7 @@ class MainViewModel(
             val customGerman = activePr?.germanPromptTemplate
             val customEnglish = activePr?.englishPromptTemplate
             val customFrench = activePr?.frenchPromptTemplate
+            val customJapanese = activePr?.japanesePromptTemplate
 
             val modelsToTry = _availableModels.value.toMutableList()
             if (modelsToTry.isEmpty()) {
@@ -1679,7 +1773,8 @@ class MainViewModel(
                         model = modelName,
                         customGermanTemplate = customGerman,
                         customEnglishTemplate = customEnglish,
-                        customFrenchTemplate = customFrench
+                        customFrenchTemplate = customFrench,
+                        customJapaneseTemplate = customJapanese
                     )
 
                     if (modelName != _selectedModel.value) {
@@ -2008,15 +2103,17 @@ class MainViewModel(
         _inlineParagraphTranslations.value = emptyMap()
     }
 
-    fun addWordToLearning(word: String) {
+    fun addWordToLearning(word: String, language: String? = null) {
         viewModelScope.launch {
-            repository.insertKnownWord(word, status = 1, language = _currentLanguage.value)
+            val lang = language ?: currentBook.value?.language ?: _currentLanguage.value
+            repository.insertKnownWord(word, status = 1, language = lang)
         }
     }
 
-    fun addWordToLearned(word: String) {
+    fun addWordToLearned(word: String, language: String? = null) {
         viewModelScope.launch {
-            repository.insertKnownWord(word, status = 2, language = _currentLanguage.value)
+            val lang = language ?: currentBook.value?.language ?: _currentLanguage.value
+            repository.insertKnownWord(word, status = 2, language = lang)
         }
     }
 
@@ -2073,9 +2170,15 @@ class MainViewModel(
                     parsedBook.title.endsWith(".srt", ignoreCase = true) ||
                     parsedBook.title.endsWith(".txt", ignoreCase = true)
 
+            val targetLanguage = if (parsedBook.chapters.any { LinguisticEngine.isJapanese(it.content) } || LinguisticEngine.isJapanese(parsedBook.title)) {
+                "ja"
+            } else {
+                _currentLanguage.value
+            }
+
             val bookId = repository.insertBookWithChapters(
                 parsedBook = parsedBook,
-                language = _currentLanguage.value,
+                language = targetLanguage,
                 filePath = parsedBook.title
             )
             
@@ -2157,9 +2260,15 @@ class MainViewModel(
                                 initialName.endsWith(".srt", ignoreCase = true) ||
                                 initialName.endsWith(".txt", ignoreCase = true)
 
+                        val targetLanguage = if (parsed.chapters.any { LinguisticEngine.isJapanese(it.content) } || LinguisticEngine.isJapanese(parsed.title)) {
+                            "ja"
+                        } else {
+                            _currentLanguage.value
+                        }
+
                         val bookId = repository.insertBookWithChapters(
                             parsedBook = parsed,
-                            language = _currentLanguage.value,
+                            language = targetLanguage,
                             filePath = initialName
                         )
 
@@ -2225,6 +2334,43 @@ class MainViewModel(
 
             withContext(Dispatchers.Main) {
                 onCompleted(successCount, failedCount)
+            }
+        }
+    }
+
+    fun installStarterJapaneseBook(context: android.content.Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isAnalyzing.value = true
+            try {
+                val book = com.example.data.engine.DefaultBookGenerator.createJapaneseMomotaroBook()
+                val bookId = repository.insertBookWithChapters(
+                    parsedBook = book,
+                    language = "ja",
+                    filePath = "momotaro.txt"
+                )
+
+                if (book.coverBytes != null) {
+                    try {
+                        val coversDir = java.io.File(context.filesDir, "covers")
+                        if (!coversDir.exists()) coversDir.mkdirs()
+                        val coverFile = java.io.File(coversDir, "cover_${bookId}.jpg")
+                        coverFile.writeBytes(book.coverBytes)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                val chapters = repository.getBookChaptersList(bookId.toInt())
+                val fullText = chapters.joinToString("\n") { it.content }
+                val tokens = LinguisticEngine.tokenizeText(fullText)
+
+                val currentCache = _bookCache.value.toMutableMap()
+                currentCache[bookId.toInt()] = createBookCacheData(tokens, chapters)
+                _bookCache.value = currentCache
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isAnalyzing.value = false
             }
         }
     }

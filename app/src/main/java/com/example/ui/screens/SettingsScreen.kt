@@ -33,6 +33,7 @@ import androidx.compose.foundation.BorderStroke
 import com.example.ui.DEFAULT_GERMAN_PROMPT
 import com.example.ui.DEFAULT_ENGLISH_PROMPT
 import com.example.ui.DEFAULT_FRENCH_PROMPT
+import com.example.ui.DEFAULT_JAPANESE_PROMPT
 import com.example.ui.CustomPrompt
 import com.example.ui.GroqApiKeyItem
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,12 +78,14 @@ fun SettingsScreen(
         var editGerman by remember { mutableStateOf("") }
         var editEnglish by remember { mutableStateOf("") }
         var editFrench by remember { mutableStateOf("") }
+        var editJapanese by remember { mutableStateOf("") }
 
         var isCreatingNew by remember { mutableStateOf(false) }
         var newPromptName by remember { mutableStateOf("") }
         var newPromptGerman by remember { mutableStateOf("") }
         var newPromptEnglish by remember { mutableStateOf("") }
         var newPromptFrench by remember { mutableStateOf("") }
+        var newPromptJapanese by remember { mutableStateOf("") }
         var isDeleteModeEnabled by remember { mutableStateOf(false) }
 
         Column(
@@ -181,6 +184,7 @@ fun SettingsScreen(
                                             editGerman = prompt.germanPromptTemplate
                                             editEnglish = prompt.englishPromptTemplate
                                             editFrench = prompt.frenchPromptTemplate
+                                            editJapanese = prompt.japanesePromptTemplate
                                         }
                                     }
                                 ) {
@@ -270,6 +274,23 @@ fun SettingsScreen(
                                     .height(150.dp)
                             )
 
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Японский шаблон (JA):",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            OutlinedTextField(
+                                value = editJapanese,
+                                onValueChange = { editJapanese = it },
+                                placeholder = { Text("Используйте {word} и {sentence} как плейсхолдеры") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                            )
+
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Row(
@@ -278,7 +299,7 @@ fun SettingsScreen(
                             ) {
                                 Button(
                                     onClick = {
-                                        viewModel.updateCustomPrompt(context, prompt.id, editName, editGerman, editEnglish, editFrench)
+                                        viewModel.updateCustomPrompt(context, prompt.id, editName, editGerman, editEnglish, editFrench, editJapanese)
                                         editingPromptId = null
                                         Toast.makeText(context, "Изменения сохранены", Toast.LENGTH_SHORT).show()
                                     },
@@ -294,6 +315,7 @@ fun SettingsScreen(
                                         editGerman = DEFAULT_GERMAN_PROMPT
                                         editEnglish = DEFAULT_ENGLISH_PROMPT
                                         editFrench = DEFAULT_FRENCH_PROMPT
+                                        editJapanese = DEFAULT_JAPANESE_PROMPT
                                         Toast.makeText(context, "Шаблон сброшен к исходному", Toast.LENGTH_SHORT).show()
                                     },
                                     modifier = Modifier.weight(1f)
@@ -390,6 +412,23 @@ fun SettingsScreen(
                                 .height(120.dp)
                         )
 
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Японский шаблон (JA):",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        OutlinedTextField(
+                            value = newPromptJapanese,
+                            onValueChange = { newPromptJapanese = it },
+                            placeholder = { Text("Введите промпт с {word} и {sentence}") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        )
+
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
@@ -405,13 +444,15 @@ fun SettingsScreen(
                                             nameTrim,
                                             newPromptGerman.ifBlank { DEFAULT_GERMAN_PROMPT },
                                             newPromptEnglish.ifBlank { DEFAULT_ENGLISH_PROMPT },
-                                            newPromptFrench.ifBlank { DEFAULT_FRENCH_PROMPT }
+                                            newPromptFrench.ifBlank { DEFAULT_FRENCH_PROMPT },
+                                            newPromptJapanese.ifBlank { DEFAULT_JAPANESE_PROMPT }
                                         )
                                         isCreatingNew = false
                                         newPromptName = ""
                                         newPromptGerman = ""
                                         newPromptEnglish = ""
                                         newPromptFrench = ""
+                                        newPromptJapanese = ""
                                         Toast.makeText(context, "Шаблон создан", Toast.LENGTH_SHORT).show()
                                     } else {
                                         Toast.makeText(context, "Введите название шаблона", Toast.LENGTH_SHORT).show()
@@ -979,28 +1020,40 @@ fun SettingsScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    Row(
+                    val languages = listOf(
+                        "de" to "Немецкий (DE)",
+                        "en" to "Английский (EN)",
+                        "fr" to "Французский (FR)",
+                        "ja" to "Японский (JA)"
+                    )
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val languages = listOf("de" to "Немецкий (DE)", "en" to "Английский (EN)", "fr" to "Французский (FR)")
-                        languages.forEach { (code, name) ->
-                            val isSelected = currentLanguage == code
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    viewModel.setCurrentLanguage(context, code)
-                                    Toast.makeText(context, "Язык изменен на $name", Toast.LENGTH_SHORT).show()
-                                },
-                                label = { Text(name) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("lang_chip_$code")
-                            )
+                        languages.chunked(2).forEach { rowLanguages ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                rowLanguages.forEach { (code, name) ->
+                                    val isSelected = currentLanguage == code
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            viewModel.setCurrentLanguage(context, code)
+                                            Toast.makeText(context, "Язык изменен на $name", Toast.LENGTH_SHORT).show()
+                                        },
+                                        label = { Text(name) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("lang_chip_$code")
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1264,6 +1317,163 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                    }
+                }
+            }
+
+            // Comprehension Percentage Precision Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Percent,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Точность процента понимания",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = "Настройте количество знаков после запятой для отображения процента понятности книги в режиме чтения.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    val decimalPlaces by viewModel.comprehensionDecimalPlaces.collectAsState()
+
+                    // Stepper: Minus, Value, Plus
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            onClick = {
+                                if (decimalPlaces > 0) {
+                                    viewModel.setComprehensionDecimalPlaces(context, decimalPlaces - 1)
+                                }
+                            },
+                            enabled = decimalPlaces > 0,
+                            modifier = Modifier.testTag("decimal_places_minus")
+                        ) {
+                            Icon(Icons.Default.Remove, contentDescription = "Уменьшить знаки")
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            val suffix = when (decimalPlaces) {
+                                1 -> "знак"
+                                in 2..4 -> "знака"
+                                else -> "знаков"
+                            }
+                            Text(
+                                text = "$decimalPlaces $suffix",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .testTag("decimal_places_value")
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                if (decimalPlaces < 4) {
+                                    viewModel.setComprehensionDecimalPlaces(context, decimalPlaces + 1)
+                                }
+                            },
+                            enabled = decimalPlaces < 4,
+                            modifier = Modifier.testTag("decimal_places_plus")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Увеличить знаки")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Preset selection chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(0, 1, 2, 3, 4).forEach { count ->
+                            val isSelected = decimalPlaces == count
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    viewModel.setComprehensionDecimalPlaces(context, count)
+                                },
+                                label = {
+                                    Text(
+                                        text = "$count",
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("decimal_places_chip_$count")
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Live sample preview in reader styling
+                    val sampleValue = 85.4268
+                    val formattedSample = "%.${decimalPlaces}f%%".format(sampleValue)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                            .padding(14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Пример в читалке:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "120 / 45 / 80  •  $formattedSample  •  5",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }

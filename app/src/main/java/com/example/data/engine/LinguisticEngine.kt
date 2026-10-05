@@ -1,5 +1,15 @@
 package com.example.data.engine
 
+import java.text.BreakIterator
+import java.util.Locale
+
+data class WordSpan(
+    val word: String,
+    val cleanWord: String,
+    val startIndex: Int,
+    val endIndex: Int
+)
+
 data class BookStatistics(
     val comprehensibleVolumePercent: Double,  // Понятно по объёму (%)
     val knownUniquePercent: Double,           // Известных уникальных (%)
@@ -19,10 +29,82 @@ object LinguisticEngine {
             .lowercase()
     }
 
+    fun isJapanese(text: String): Boolean {
+        return text.any {
+            it in '\u3040'..'\u309F' || // Hiragana
+            it in '\u30A0'..'\u30FF' || // Katakana
+            it in '\u4E00'..'\u9FAF'    // Kanji
+        }
+    }
+
+    fun extractWordSpans(text: String, isJapaneseLanguage: Boolean = false): List<WordSpan> {
+        if (text.isEmpty()) return emptyList()
+        val isJa = isJapaneseLanguage || isJapanese(text)
+        val result = mutableListOf<WordSpan>()
+        if (isJa) {
+            val boundary = BreakIterator.getWordInstance(Locale.JAPANESE)
+            boundary.setText(text)
+            var start = boundary.first()
+            var end = boundary.next()
+            while (end != BreakIterator.DONE) {
+                val token = text.substring(start, end)
+                val cleaned = tokenizeWord(token)
+                if (cleaned.isNotEmpty() && token.any { it.isLetter() }) {
+                    result.add(WordSpan(word = token, cleanWord = cleaned, startIndex = start, endIndex = end))
+                }
+                start = end
+                end = boundary.next()
+            }
+        } else {
+            val wordRegex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
+            wordRegex.findAll(text).forEach { match ->
+                val clean = tokenizeWord(match.value)
+                if (clean.isNotEmpty()) {
+                    result.add(
+                        WordSpan(
+                            word = match.value,
+                            cleanWord = clean,
+                            startIndex = match.range.first,
+                            endIndex = match.range.last + 1
+                        )
+                    )
+                }
+            }
+        }
+        return result
+    }
+
+    fun extractWordsFromText(text: String): List<String> {
+        return if (isJapanese(text)) {
+            val result = mutableListOf<String>()
+            val boundary = BreakIterator.getWordInstance(Locale.JAPANESE)
+            boundary.setText(text)
+            var start = boundary.first()
+            var end = boundary.next()
+            while (end != BreakIterator.DONE) {
+                val token = text.substring(start, end).trim()
+                val cleaned = tokenizeWord(token)
+                if (cleaned.isNotEmpty()) {
+                    result.add(cleaned)
+                }
+                start = end
+                end = boundary.next()
+            }
+            result
+        } else {
+            val wordRegex = Regex("""(\p{L}+(?:[-'’`]\p{L}+)*)""")
+            wordRegex.findAll(text).map { tokenizeWord(it.value) }.filter { it.isNotEmpty() }.toList()
+        }
+    }
+
     fun tokenizeText(text: String): List<String> {
-        return text.split(' ', '\n', '\t', '\r')
-            .map { tokenizeWord(it) }
-            .filter { it.isNotEmpty() }
+        return if (isJapanese(text)) {
+            extractWordsFromText(text)
+        } else {
+            text.split(' ', '\n', '\t', '\r')
+                .map { tokenizeWord(it) }
+                .filter { it.isNotEmpty() }
+        }
     }
 
     fun calculateStatistics(allWords: List<String>, knownWordsSet: Set<String>): BookStatistics {

@@ -7,3 +7,9 @@ data class ChapterStatsData(
     val learnedCount: Int,
     val uniqueCount: Int
 )
+
+data class BookUnknownWord(
+    val word: String,
+    val cleanWord: String = word.lowercase(),
+    val count: Int
+)

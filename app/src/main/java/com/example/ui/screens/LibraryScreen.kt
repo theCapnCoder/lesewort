@@ -70,6 +70,7 @@ fun LibraryScreen(
     val importProgress by viewModel.importProgress.collectAsState()
     val currentSort by viewModel.sortBy.collectAsState()
     val isStatsRefreshing by viewModel.isStatsRefreshing.collectAsState()
+    val currentLang by viewModel.currentLanguage.collectAsState()
 
     var showDeleteDialogForBook by remember { mutableStateOf<BookUiItem?>(null) }
     var selectedBookIds by remember { mutableStateOf(emptySet<Int>()) }
@@ -196,14 +197,13 @@ fun LibraryScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            val currentLang by viewModel.currentLanguage.collectAsState()
-
                             // Language selector
                             Surface(
                                 onClick = {
                                     val targetLang = when (currentLang) {
                                         "de" -> "en"
                                         "en" -> "fr"
+                                        "fr" -> "ja"
                                         else -> "de"
                                     }
                                     viewModel.setCurrentLanguage(context, targetLang)
@@ -223,6 +223,7 @@ fun LibraryScreen(
                                     when (currentLang) {
                                         "de" -> GermanCircularFlag()
                                         "fr" -> FrenchCircularFlag()
+                                        "ja" -> JapaneseCircularFlag()
                                         else -> EnglishCircularFlag()
                                     }
 
@@ -599,6 +600,19 @@ fun LibraryScreen(
                             modifier = Modifier.padding(horizontal = 32.dp),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
+                        if (currentLang == "ja") {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.installStarterJapaneseBook(context)
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Добавить сказку «桃太郎» (Момотаро)")
+                            }
+                        }
                     }
                 } else {
                     val groupByNewWords by viewModel.groupByNewWords.collectAsState()
@@ -1077,6 +1091,25 @@ fun FrenchCircularFlag(modifier: Modifier = Modifier) {
             Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFFFFFFF)))
             Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color(0xFFED2939)))
         }
+    }
+}
+
+@Composable
+fun JapaneseCircularFlag(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(20.dp)
+            .clip(CircleShape)
+            .background(Color.White)
+            .border(0.5.dp, Color.Black.copy(alpha = 0.2f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFBC002D))
+        )
     }
 }
 

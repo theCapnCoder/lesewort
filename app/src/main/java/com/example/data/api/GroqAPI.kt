@@ -28,11 +28,12 @@ object GroqAPI {
         word: String,
         sentence: String,
         apiKey: String,
-        language: String, // "de", "en", or "fr"
+        language: String, // "de", "en", "fr", or "ja"
         model: String = "openai/gpt-oss-20b",
         customGermanTemplate: String? = null,
         customEnglishTemplate: String? = null,
-        customFrenchTemplate: String? = null
+        customFrenchTemplate: String? = null,
+        customJapaneseTemplate: String? = null
     ): WordDataComplete = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
             throw IllegalArgumentException("API ключ Groq не настроен. Перейдите в настройки для его добавления.")
@@ -41,6 +42,7 @@ object GroqAPI {
         val langName = when (language) {
             "de" -> "немецкий"
             "fr" -> "французский"
+            "ja" -> "японский"
             else -> "английский"
         }
 
@@ -88,6 +90,29 @@ object GroqAPI {
         
                         ===ОБЪЯСНЕНИЕ===
                         [Краткое грамматическое или лексическое объяснение слова "$word" в контексте предложения: 2-3 предложения на русском языке]
+                    """.trimIndent()
+                }
+            }
+            "ja" -> {
+                if (customJapaneseTemplate != null) {
+                    customJapaneseTemplate
+                        .replace("{word}", word)
+                        .replace("{sentence}", sentence)
+                } else {
+                    """
+                        Дай полную информацию о японском слове "$word" из предложения: "$sentence".
+                        Учти чтение (кандзи, хирагана / фуригана / ромадзи), словарную начальную форму, часть речи (существительное, глагол с типом спряжения, и-прилагательное, на-прилагательное, частица или счетный суффикс).
+        
+                        Отвечай на русском языке строго в следующем формате по разделам:
+        
+                        ===ПЕРЕВОД СЛОВА===
+                        [СТРОГО только сам перевод японского слова "$word" на русский язык, одно слово или несколько вариантов через запятую. Категорически запрещено добавлять любые вводные слова или фразы. Пиши ТОЛЬКО чистый перевод и ничего кроме него!]
+        
+                        ===ПЕРЕВОД ПРЕДЛОЖЕНИЯ===
+                        [Точный и естественный перевод японского предложения "$sentence" на русский язык]
+        
+                        ===ОБЪЯСНЕНИЕ===
+                        [Чтение слова (хирагана / кандзи), словарная форма, часть речи и грамматическая роль в данном предложении. Кратко и понятно: 2-3 предложения на русском языке]
                     """.trimIndent()
                 }
             }
@@ -205,7 +230,7 @@ object GroqAPI {
         word: String,
         sentence: String = "",
         apiKey: String,
-        language: String, // "de" or "en"
+        language: String, // "de", "en", "fr", or "ja"
         model: String = "openai/gpt-oss-20b"
     ): List<String> = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
@@ -215,6 +240,7 @@ object GroqAPI {
         val langName = when (language) {
             "de" -> "немецкий"
             "fr" -> "французский"
+            "ja" -> "японский"
             else -> "английский"
         }
 
@@ -278,7 +304,7 @@ object GroqAPI {
     suspend fun translateParagraph(
         paragraph: String,
         apiKey: String,
-        language: String, // "de", "en", or "fr"
+        language: String, // "de", "en", "fr", or "ja"
         model: String = "openai/gpt-oss-20b"
     ): String = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
@@ -288,6 +314,7 @@ object GroqAPI {
         val langName = when (language) {
             "de" -> "немецкий"
             "fr" -> "французский"
+            "ja" -> "японский"
             else -> "английский"
         }
 
@@ -338,7 +365,7 @@ object GroqAPI {
         paragraph: String,
         unknownWords: List<String>,
         apiKey: String,
-        language: String, // "de" or "en"
+        language: String, // "de", "en", "fr", or "ja"
         model: String = "openai/gpt-oss-20b"
     ): Map<String, String> = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
@@ -352,6 +379,7 @@ object GroqAPI {
         val langName = when (language) {
             "de" -> "немецкий"
             "fr" -> "французский"
+            "ja" -> "японский"
             else -> "английский"
         }
 

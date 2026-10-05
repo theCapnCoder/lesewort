@@ -593,6 +593,10 @@ object BookParser {
     }
 
     private fun fastCountWords(str: String): Int {
+        if (str.isEmpty()) return 0
+        if (LinguisticEngine.isJapanese(str)) {
+            return LinguisticEngine.extractWordsFromText(str).size
+        }
         var count = 0
         var inWord = false
         for (i in 0 until str.length) {
@@ -610,13 +614,13 @@ object BookParser {
     }
 
     /**
-     * Splits plain text into chapters if heading markers (e.g. Chapter 1, Глава 1, Part I) are present,
+     * Splits plain text into chapters if heading markers (e.g. Chapter 1, Глава 1, Part I, 第1章) are present,
      * or returns the entire text as a single chapter to be chunked by splitLargeChapters.
      */
     private fun splitTxtByDetectedChapters(bookTitle: String, text: String): List<ParsedChapter> {
         val lines = text.lines()
         val chapterRegex = Regex(
-            """^\s*(?:глава|chapter|part|часть|раздел|section|episode|эпизод|книга|book)\s*[ivxldcm0-9_]*.*$""",
+            """^\s*(?:глава|chapter|kapitel|chapitre|part|часть|раздел|section|episode|эпизод|книга|book|第|章)\s*[ivxldcm0-9_]*.*$""",
             RegexOption.IGNORE_CASE
         )
         val romanNumeralRegex = Regex("""^\s*[ivxldcm]+\.?\s*$""", RegexOption.IGNORE_CASE)

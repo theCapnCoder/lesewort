@@ -265,4 +265,160 @@ object DefaultBookGenerator {
             e.printStackTrace()
         }
     }
+
+    private fun generateJapaneseCoverJpg(): ByteArray {
+        val width = 600
+        val height = 900
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // Warm dark crimson / red Japanese background
+        val bgPaint = Paint().apply {
+            color = Color.parseColor("#4A0E17")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
+
+        // Draw elegant ornamental border
+        val borderPaint = Paint().apply {
+            color = Color.parseColor("#FDE68A")
+            style = Paint.Style.STROKE
+            strokeWidth = 10f
+        }
+        canvas.drawRect(25f, 25f, (width - 25).toFloat(), (height - 25).toFloat(), borderPaint)
+
+        // Draw Japanese sun circle
+        val sunPaint = Paint().apply {
+            color = Color.parseColor("#BC002D")
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        canvas.drawCircle((width / 2).toFloat(), 380f, 130f, sunPaint)
+
+        // Japanese Kanji Title
+        val titlePaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 72f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+        }
+        canvas.drawText("桃太郎", (width / 2).toFloat(), 405f, titlePaint)
+
+        // Subtitle Romaji
+        val subPaint = Paint().apply {
+            color = Color.parseColor("#FDE68A")
+            textSize = 30f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("serif", Typeface.BOLD)
+        }
+        canvas.drawText("MOMOTARO", (width / 2).toFloat(), 560f, subPaint)
+
+        // Description
+        val descPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 24f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("serif", Typeface.NORMAL)
+        }
+        canvas.drawText("The Peach Boy — Graded Reader", (width / 2).toFloat(), 610f, descPaint)
+
+        // Author
+        val authorPaint = Paint().apply {
+            color = Color.parseColor("#E2E8F0")
+            textSize = 26f
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("serif", Typeface.ITALIC)
+        }
+        canvas.drawText("Japanese Folk Tale", (width / 2).toFloat(), 760f, authorPaint)
+
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+        val bytes = stream.toByteArray()
+        bitmap.recycle()
+        return bytes
+    }
+
+    fun createJapaneseMomotaroBook(): com.example.data.parser.ParsedBook {
+        val ch1 = com.example.data.parser.ParsedChapter(
+            title = "第1章 桃太郎の誕生",
+            content = """昔々、ある所に、おじいさんとおばあさんが住んでいました。
+おじいさんは山へ柴刈りに、おばあさんは川へ洗濯に行きました。
+
+おばあさんが川で洗濯をしていると、川上から大きな桃が、どんぶらこ、どんぶらこと流れてきました。
+「おや、これはずいぶん大きな桃だね。家に持って帰って、おじいさんと一緒に食べよう」。
+おばあさんは桃を拾い上げて、家に持ち帰りました。
+
+夕方、おじいさんが山から帰ってきました。
+「おばあさん、何か食べるものはあるかい？」
+「おじいさん、川でこんなに大きな桃を拾ったんですよ」。
+
+おじいさんとおばあさんが桃を切ろうとすると、桃がぱかっと割れて、中から元気な男の赤ちゃんが生まれました。
+「これは神様からの授かりものだ」。
+二人は大喜びして、桃から生まれた男の子に「桃太郎」という名前をつけました。
+
+桃太郎は毎日ご飯をもりもり食べて、すくすくと大きく、力持ちに育ちました。"""
+        )
+
+        val ch2 = com.example.data.parser.ParsedChapter(
+            title = "第2章 鬼退治への旅立ち",
+            content = """その頃、都や村では、鬼ヶ島に住む悪い鬼たちがやってきては、人々を苦しめたり、大切な宝物を奪ったりしていました。
+村人たちはいつも怯えて暮らしていました。
+
+それを聞いた桃太郎は、おじいさんとおばあさんの前で言いました。
+「おじいさん、おばあさん。私は鬼ヶ島へ行って、悪い鬼たちを退治してきます」。
+
+おじいさんとおばあさんは驚きましたが、桃太郎の決意が固いことを知り、応援することにしました。
+おばあさんは、日本一おいしいきびだんごを作ってくれました。
+おじいさんは、立派な刀と「日本一の桃太郎」と書かれた旗を用意してくれました。
+
+桃太郎はきびだんごを腰の袋に入れ、刀を差して、元気に旅立ちました。"""
+        )
+
+        val ch3 = com.example.data.parser.ParsedChapter(
+            title = "第3章 頼もしい仲間たち",
+            content = """桃太郎が山道を歩いていると、一匹の犬が駆けてきました。
+「桃太郎さん、桃太郎さん、腰につけたきびだんごを一つくださいな。お供します」。
+桃太郎は「いいよ、日本一のきびだんごをあげよう」と言って、きびだんごを一つ渡しました。犬はきびだんごを食べると、桃太郎の後ろについて歩き始めました。
+
+しばらく行くと、山の中から猿がやってきました。
+「桃太郎さん、きびだんごを一つください。私もお供します」。
+桃太郎は猿にもきびだんごをあげました。
+
+さらに歩くと、今度はキジが飛んできました。
+「桃太郎さん、きびだんごをくださいな。鬼退治のお手伝いをします」。
+桃太郎はキジにもきびだんごを渡しました。
+
+こうして、犬、猿、キジという頼もしい仲間ができました。"""
+        )
+
+        val ch4 = com.example.data.parser.ParsedChapter(
+            title = "第4章 鬼ヶ島の戦いと凱旋",
+            content = """一行は海に出て、船に乗って鬼ヶ島へと向かいました。
+しばらく舟を漕ぐと、黒い岩に囲まれた恐ろしい鬼ヶ島が見えてきました。
+
+城の門は固く閉ざされていましたが、キジが空高く飛び上がり、門の内側から鍵を開けました。
+犬は門番の鬼たちに吠えかかり、猿は素早く壁をよじ登って鬼たちを混乱させました。
+
+桃太郎は城の奥へと進み、鬼の親分と対決しました。
+「村人たちを苦しめる悪い鬼め、成敗してくれる！」。
+桃太郎の強い力に鬼たちは敵わず、親分は涙を流して降参しました。
+「まいりました、もう二度と悪さはしません。宝物もお返しします」。
+
+桃太郎と仲間たちは、奪われた金銀財宝を車に積み、意気揚々と村へ帰りました。
+おじいさんとおばあさんは無事な桃太郎の姿を見て涙を流して喜びました。
+村人たちも大喜びし、桃太郎たちは末永く幸せに暮らしました。"""
+        )
+
+        val coverBytes = generateJapaneseCoverJpg()
+        return com.example.data.parser.ParsedBook(
+            title = "桃太郎 (Momotaro)",
+            author = "日本の昔話 (Japanese Folklore)",
+            chapters = listOf(ch1, ch2, ch3, ch4),
+            coverBytes = coverBytes
+        )
+    }
 }

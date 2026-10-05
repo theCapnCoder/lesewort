@@ -24,6 +24,7 @@ val SUPPORTED_LANGUAGES = listOf(
     AppLanguage("de", "Немецкий", "Deutsch", "🇩🇪"),
     AppLanguage("en", "Английский", "English", "🇬🇧"),
     AppLanguage("fr", "Французский", "Français", "🇫🇷"),
+    AppLanguage("ja", "Японский", "日本語", "🇯🇵"),
     AppLanguage("es", "Испанский", "Español", "🇪🇸"),
     AppLanguage("it", "Итальянский", "Italiano", "🇮🇹"),
     AppLanguage("ru", "Русский", "Русский", "🇷🇺")
@@ -35,6 +36,7 @@ fun getLanguageNameRu(code: String): String {
             "de" -> "Немецкий"
             "en" -> "Английский"
             "fr" -> "Французский"
+            "ja" -> "Японский"
             "es" -> "Испанский"
             "it" -> "Итальянский"
             "ru" -> "Русский"
@@ -51,10 +53,31 @@ fun LanguageFlagIcon(
         "de" -> GermanFlagIcon(modifier)
         "fr" -> FrenchFlagIcon(modifier)
         "en" -> EnglishFlagIcon(modifier)
+        "ja" -> JapaneseFlagIcon(modifier)
         "es" -> SpanishFlagIcon(modifier)
         "it" -> ItalianFlagIcon(modifier)
         "ru" -> RussianFlagIcon(modifier)
         else -> GermanFlagIcon(modifier)
+    }
+}
+
+@Composable
+fun JapaneseFlagIcon(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .width(26.dp)
+            .height(18.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(Color.White)
+            .border(1.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(3.dp)),
+        contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Color(0xFFBC002D))
+        )
     }
 }
 
